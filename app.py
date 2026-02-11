@@ -28,9 +28,18 @@ def extract_text(file):
     return ""
 
 
-def similarity(a, b):
-    vec = TfidfVectorizer().fit_transform([a, b])
-    return cosine_similarity(vec[0:1], vec[1:2])[0][0] * 100
+def similarity(text, snippets):
+    """
+    Compares a text chunk with multiple snippets and returns the highest similarity %
+    """
+    if not snippets:
+        return 0
+    vec = TfidfVectorizer().fit([text] + snippets)
+    text_vec = vec.transform([text])
+    snippets_vec = vec.transform(snippets)
+    sims = cosine_similarity(text_vec, snippets_vec)
+    return round(max(sims[0]) * 100, 2)
+
 
 
 def search_bing(sentence):
@@ -53,21 +62,39 @@ def index():
     results = []
 
     if request.method == "POST":
-        file = request.files["file"]
+        file = request.files.get("file")
+        if not file:
+            return render_template("index.html", results=[], error="No file uploaded")
+
+        # Extract text from the uploaded file
         text = extract_text(file)
 
-        sentences = [s.strip() for s in text.split(".") if len(s.strip()) > 25]
+        # Split text into chunks of 3 sentences for better similarity
+        sentences = [s.strip() for s in text.replace("\n", " ").split(".") if len(s.strip()) > 20]
+        chunks = []
+        for i in range(0, len(sentences), 3):
+            chunk = ". ".join(sentences[i:i+3])
+            if chunk:
+                chunks.append(chunk)
 
-        for s in sentences:
-            snippets = search_bing(s)
+        for chunk in chunks:
+            # Search Bing for this chunk
+            snippets = search_bing(chunk)
+
+            # Calculate max similarity
             max_sim = 0
+            if snippets:
+                # Use TF-IDF vectorizer for chunk vs all snippets
+                vec = TfidfVectorizer(stop_words='english').fit([chunk] + snippets)
+                chunk_vec = vec.transform([chunk])
+                snippets_vec = vec.transform(snippets)
+                sims = cosine_similarity(chunk_vec, snippets_vec)
+                max_sim = round(max(sims[0]) * 100, 2)
 
-            for snip in snippets:
-                max_sim = max(max_sim, similarity(s, snip))
-
-            results.append((s, round(max_sim, 2)))
+            results.append((chunk, max_sim))
 
     return render_template("index.html", results=results)
+
 
 
 if __name__ == "__main__":
