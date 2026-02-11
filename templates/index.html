@@ -1,0 +1,45 @@
+# Internet Plagiarism Checker – Ready Web App (Stylish UI)
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Internet Plagiarism Checker</title>
+    <style>
+        body { font-family: Arial; background:#f4f6f9; text-align:center; }
+        .box { background:white; padding:30px; margin:40px auto; width:70%; border-radius:12px; box-shadow:0 0 10px #ccc; }
+        h1 { color:#333; }
+        button { padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:6px; cursor:pointer; }
+        table { width:100%; margin-top:20px; border-collapse:collapse; }
+        th, td { border:1px solid #ddd; padding:10px; }
+        th { background:#4CAF50; color:white; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Internet Plagiarism Checker</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <br><br>
+        <button type="submit">Check Plagiarism</button>
+    </form>
+
+    {% if results %}
+    <table>
+        <tr>
+            <th>Sentence</th>
+            <th>Similarity %</th>
+        </tr>
+        {% for s, sim in results %}
+        <tr>
+            <td>{{ s }}</td>
+            <td>{{ sim }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</div>
+
+</body>
+</html>
